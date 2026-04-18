@@ -184,33 +184,41 @@ String getActionButton() {
              "&nbsp;&nbsp;"
              "<a href='/reset'><button class='btn' style='background:#6c757d;'>Finish</button></a>";
     case CHARGING_COMPLETE:
-      return "<a href='/reset'><button class='btn' style='background:#6c757d;'>Back to Idle</button></a>";
+      return "<a href='/reset'><button class='btn' style='background:#6c757d;'>Finish</button></a>";
     default:
       return "";
   }
 }
 
-// Settings panel is only shown in IDLE state where the user can safely change values
 String getSettingsHTML() {
-  if (state != IDLE) return "";
-  String s = "<hr><h3>Settings</h3>";
+  String html = "<!DOCTYPE html><html><head>"
+                "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+                "<title>Settings</title>"
+                "<style>"
+                "body{font-family:sans-serif;max-width:400px;margin:40px auto;padding:0 16px;}"
+                ".btn-sm{font-size:14px;padding:4px 10px;border:none;border-radius:4px;cursor:pointer;background:#007bff;color:#fff;}"
+                "label{font-size:15px;}"
+                "hr{margin:16px 0;}"
+                "</style></head><body>";
+  html += "<h2>Settings</h2><p><a href='/'>&#8592; Back</a></p><hr>";
 
-  s += "<form action='/setlimit' method='get'>";
-  s += "<label>Charge limit (kWh):<br>";
-  s += "<input type='number' name='kwh' step='0.1' min='0.1' max='100' value='" + String(maxKWh, 1) + "' style='width:80px;'></label> ";
-  s += "<button type='submit' class='btn-sm'>Set</button></form><br>";
+  html += "<form action='/setlimit' method='get'>";
+  html += "<label>Charge limit (kWh):<br>";
+  html += "<input type='number' name='kwh' step='0.1' min='0.1' max='100' value='" + String(maxKWh, 1) + "' style='width:80px;'></label> ";
+  html += "<button type='submit' class='btn-sm'>Set</button></form><br>";
 
-  s += "<form action='/setprice' method='get'>";
-  s += "<label>Price (EUR / kWh):<br>";
-  s += "<input type='number' name='eur' step='0.01' min='0.01' max='9.99' value='" + String(pricePerKWh, 2) + "' style='width:80px;'></label> ";
-  s += "<button type='submit' class='btn-sm'>Set</button></form><br>";
+  html += "<form action='/setprice' method='get'>";
+  html += "<label>Price (EUR / kWh):<br>";
+  html += "<input type='number' name='eur' step='0.01' min='0.01' max='9.99' value='" + String(pricePerKWh, 2) + "' style='width:80px;'></label> ";
+  html += "<button type='submit' class='btn-sm'>Set</button></form><br>";
 
-  s += "<form action='/setcostcap' method='get'>";
-  s += "<label>Cost cap EUR (0 = off):<br>";
-  s += "<input type='number' name='eur' step='0.01' min='0' max='999' value='" + String(maxCost, 2) + "' style='width:80px;'></label> ";
-  s += "<button type='submit' class='btn-sm'>Set</button></form>";
+  html += "<form action='/setcostcap' method='get'>";
+  html += "<label>Cost cap EUR (0 = off):<br>";
+  html += "<input type='number' name='eur' step='0.01' min='0' max='999' value='" + String(maxCost, 2) + "' style='width:80px;'></label> ";
+  html += "<button type='submit' class='btn-sm'>Set</button></form>";
 
-  return s;
+  html += "</body></html>";
+  return html;
 }
 
 String getHTML() {
@@ -240,9 +248,7 @@ String getHTML() {
 
   html += "<hr><div id='s-btn'>" + getActionButton() + "</div>";
 
-  html += getSettingsHTML();
-
-  html += "<hr><p><a href='/history'>Session History</a></p>";
+  html += "<hr><p><a href='/settings'>Settings</a> &nbsp;&middot;&nbsp; <a href='/history'>Session History</a></p>";
 
   // JS: sync browser time on load, then poll /api/status every second
   html += "<script>"
@@ -252,8 +258,8 @@ String getHTML() {
           "'Idle':'<a href=\"/ready\"><button class=\"btn\" style=\"background:#f0ad00;\">Ready!</button></a>',"
           "'Ready!':'<a href=\"/start\"><button class=\"btn\" style=\"background:#28a745;\">Start Charging</button></a>',"
           "'Charging...':'<a href=\"/stop\"><button class=\"btn\" style=\"background:#dc3545;\">Stop Charging</button></a>',"
-          "'Charging stopped':'<a href=\"/resume\"><button class=\"btn\" style=\"background:#28a745;\">Resume Charging</button></a>&nbsp;&nbsp;<a href=\"/reset\"><button class=\"btn\" style=\"background:#6c757d;\">Back to Idle</button></a>',"
-          "'Charging complete':'<a href=\"/reset\"><button class=\"btn\" style=\"background:#6c757d;\">Back to Idle</button></a>'"
+          "'Charging stopped':'<a href=\"/resume\"><button class=\"btn\" style=\"background:#28a745;\">Resume Charging</button></a>&nbsp;&nbsp;<a href=\"/reset\"><button class=\"btn\" style=\"background:#6c757d;\">Finish</button></a>',"
+          "'Charging complete':'<a href=\"/reset\"><button class=\"btn\" style=\"background:#6c757d;\">Finish</button></a>'"
           "};"
           "function update(){"
           "fetch('/api/status').then(r=>r.json()).then(d=>{"
@@ -319,8 +325,9 @@ String getHistoryHTML() {
 }
 
 // ---------- HTTP Handlers ----------
-void handleRoot()    { server.send(200, "text/html", getHTML()); }
-void handleHistory() { server.send(200, "text/html", getHistoryHTML()); }
+void handleRoot()     { server.send(200, "text/html", getHTML()); }
+void handleSettings() { server.send(200, "text/html", getSettingsHTML()); }
+void handleHistory()  { server.send(200, "text/html", getHistoryHTML()); }
 
 void handleApiStatus() {
   String json = "{";
@@ -358,21 +365,21 @@ void handleSetLimit() {
     float val = server.arg("kwh").toFloat();
     if (val >= 0.1) maxKWh = val;
   }
-  server.sendHeader("Location", "/"); server.send(302, "text/plain", "");
+  server.sendHeader("Location", "/settings"); server.send(302, "text/plain", "");
 }
 void handleSetPrice() {
   if (server.hasArg("eur")) {
     float val = server.arg("eur").toFloat();
     if (val >= 0.01) pricePerKWh = val;
   }
-  server.sendHeader("Location", "/"); server.send(302, "text/plain", "");
+  server.sendHeader("Location", "/settings"); server.send(302, "text/plain", "");
 }
 void handleSetCostCap() {
   if (server.hasArg("eur")) {
     float val = server.arg("eur").toFloat();
     if (val >= 0.0) maxCost = val;
   }
-  server.sendHeader("Location", "/"); server.send(302, "text/plain", "");
+  server.sendHeader("Location", "/settings"); server.send(302, "text/plain", "");
 }
 void handleSyncTime() {
   if (server.hasArg("ts")) {
@@ -423,6 +430,7 @@ void setup() {
   Serial.println(WiFi.softAPIP());
 
   server.on("/",            handleRoot);
+  server.on("/settings",    handleSettings);
   server.on("/ready",       handleReady);
   server.on("/start",       handleStart);
   server.on("/stop",        handleStop);
