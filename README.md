@@ -1,6 +1,6 @@
-# Mini LEGO EV Charging Station Simulator
+# Mini EV Charging Station Simulator
 
-A playful, LEGO-based EV charging station that **simulates** an EV charging session (it does **not** charge a real battery). Kids “plug in” a LEGO car using a hidden button (or optional magnetic switch), and the station responds with clear feedback:
+A playful, building block based EV charging station that **simulates** an EV charging session (it does **not** charge a real battery). Kids “plug in” a car using a hidden button (or optional magnetic switch), and the station responds with clear feedback:
 
 - **LED status** (Idle / Connected / Charging / Finished)
 - **Live LCD readout** (state, kWh delivered, cost)
@@ -32,7 +32,7 @@ A real EV charger and not a battery charger. It only simulates energy and cost.
 
 Core parts:
 - ESP32 dev board
-- Push button (hidden under the LEGO “plug”)
+- Push button (hidden under a building block “plug”)
 - LED + resistor
 - I2C LCD (16x2 style)
 
@@ -62,7 +62,7 @@ LCD (I2C):
 
 ## How it works (user flow)
 
-1. Place the LEGO car at the station.
+1. Place the toy car at the station.
 2. “Plug in” the car (simulated by pressing the hidden button under the plug).
 3. Watch the station respond:
    - LED changes to show state
